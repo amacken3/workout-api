@@ -23,6 +23,9 @@ class Exercise(db.Model):
             raise ValueError('Exercise must have a name.')
         
         return name.strip()
+    
+    def __repr__(self):
+        return f'<Exercise {self.name}>'
 
 class Workout(db.Model):
     __tablename__ = 'workouts'
@@ -37,13 +40,16 @@ class Workout(db.Model):
         secondary='workout_exercises',
         viewonly=True
     )
-
+    
     @validates('duration_minutes')
     def validate_duration_minutes(self, key, duration_minutes):
         if duration_minutes is None or duration_minutes <= 0:
             raise ValueError('Workout duration must be positive.')
         
         return duration_minutes
+    
+    def __repr__(self):
+        return f'<Workout {self.date} - {self.duration_minutes} min>'
 
 class WorkoutExercise(db.Model):
     __tablename__ = 'workout_exercises'
@@ -77,3 +83,6 @@ class WorkoutExercise(db.Model):
             raise ValueError(f'{key} cannot be negative.')
 
         return value    
+    
+    def __repr__(self):
+        return f"<WorkoutExercise workout_id={self.workout_id} exercise_id={self.exercise_id}>"
