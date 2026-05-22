@@ -1,6 +1,7 @@
 import pytest
 from datetime import date
 from flask import Flask
+from sqlalchemy.exc import IntegrityError
 
 from models import db, Exercise, Workout, WorkoutExercise
 
@@ -305,3 +306,114 @@ def test_exercise_has_many_workouts_through_workout_exercises(test_app):
 
     assert workout_one in exercise.workouts
     assert workout_two in exercise.workouts
+
+def test_exercise_name_must_be_unique(test_app):
+    exercise_one = Exercise(
+        name="Push-up",
+        category="Strength",
+        equipment_needed=False
+    )
+
+    exercise_two = Exercise(
+        name="Push-up",
+        category="Strength",
+        equipment_needed=False
+    )
+
+    db.session.add_all([exercise_one, exercise_two])
+
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+
+    db.session.rollback()
+
+
+def test_exercise_category_cannot_be_null(test_app):
+    exercise = Exercise(
+        name="Squat",
+        category=None,
+        equipment_needed=False
+    )
+
+    db.session.add(exercise)
+
+    with pytest.raises(IntegrityError):
+        db.session.commit()
+
+    db.session.rollback()
+
+
+def test_exercise_name_cannot_be_blank(test_app):
+    with pytest.raises(ValueError):
+        Exercise(
+            name="",
+            category="Strength",
+            equipment_needed=False
+        )
+
+    with pytest.raises(ValueError):
+        Exercise(
+            name="   ",
+            category="Strength",
+            equipment_needed=False
+        )
+
+
+def test_workout_duration_minutes_must_be_positive(test_app):
+    with pytest.raises(ValueError):
+        Workout(
+            date=date(2026, 5, 22),
+            duration_minutes=0,
+            notes="Invalid workout duration"
+        )
+
+    with pytest.raises(ValueError):
+        Workout(
+            date=date(2026, 5, 22),
+            duration_minutes=-30,
+            notes="Invalid workout duration"
+        )
+
+
+def test_workout_exercise_numbers_cannot_be_negative(test_app):
+    exercise = Exercise(
+        name="Bench Press",
+        category="Strength",
+        equipment_needed=True
+    )
+
+    workout = Workout(
+        date=date(2026, 5, 22),
+        duration_minutes=45,
+        notes="Upper body workout"
+    )
+
+    db.session.add_all([exercise, workout])
+    db.session.commit()
+
+    with pytest.raises(ValueError):
+        WorkoutExercise(
+            workout_id=workout.id,
+            exercise_id=exercise.id,
+            reps=-1,
+            sets=3,
+            duration_seconds=0
+        )
+
+    with pytest.raises(ValueError):
+        WorkoutExercise(
+            workout_id=workout.id,
+            exercise_id=exercise.id,
+            reps=10,
+            sets=-1,
+            duration_seconds=0
+        )
+
+    with pytest.raises(ValueError):
+        WorkoutExercise(
+            workout_id=workout.id,
+            exercise_id=exercise.id,
+            reps=10,
+            sets=3,
+            duration_seconds=-30
+        )
