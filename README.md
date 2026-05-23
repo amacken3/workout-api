@@ -146,9 +146,7 @@ From the `server/` directory, run:
 pipenv run python app.py
 ```
 
-```bash
-http://127.0.0.1:5555
-```
+You can open the server at http://127.0.0.1:5555
 
 
 ## Running Tests
