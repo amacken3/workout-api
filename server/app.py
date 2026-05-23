@@ -1,6 +1,7 @@
 from flask import Flask, make_response, request
 from flask_migrate import Migrate
 from models import db, Exercise, Workout, WorkoutExercise
+from schemas import ExerciseSchema, WorkoutSchema, WorkoutExerciseSchema
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -17,49 +18,130 @@ def index():
 
 @app.route('/workouts', methods=['GET'])
 def get_workouts():
-    return {'message': 'List all workouts'}
+    workouts = Workout.query.all()
+
+    workout_schema = WorkoutSchema(many=True)
+    workouts_data = workout_schema.dump(workouts)
+    
+    return workouts_data, 200
 
 
-@app.route('/workouts/<int:id>', methods=['GET'])
-def get_workout_by_id(id):
-    return {'message': f'Show workout {id}'}
+@app.route('/workouts/<int:workout_id>', methods=['GET'])
+def get_workout_by_id(workout_id):
+    workout = Workout.query.get(workout_id)
+
+    if not workout:
+        return {'error': 'Workout not found'}, 404
+
+    workout_schema = WorkoutSchema()
+    workout_data = workout_schema.dump(workout)
+
+    return workout_data, 200
 
 
 @app.route('/workouts', methods=['POST'])
 def create_workout():
-    return {'message': 'Create a workout'}, 201
+    data = request.get_json()
+
+    workout_schema = WorkoutSchema()
+    valid_data = workout_schema.load(data)
+
+    workout = Workout(**valid_data)
+
+    db.session.add(workout)
+    db.session.commit()
+
+    return workout_schema.dump(workout), 201
 
 
-@app.route('/workouts/<int:id>', methods=['DELETE'])
-def delete_workout(id):
+@app.route('/workouts/<int:workout_id>', methods=['DELETE'])
+def delete_workout(workout_id):
+    workout = Workout.query.get(workout_id)
+
+    if not workout:
+        return {'error': 'Workout not found'}, 404
+    
+    db.session.delete(workout)
+    db.session.commit()
+
     return '', 204
 
 
 @app.route('/exercises', methods=['GET'])
 def get_exercises():
-    return {'message': 'List all exercises'}
+    exercises = Exercise.query.all()
+
+    exercise_schema = ExerciseSchema(many=True)
+    exercises_data = exercise_schema.dump(exercises)
+
+    return exercises_data, 200
 
 
-@app.route('/exercises/<int:id>', methods=['GET'])
-def get_exercise_by_id(id):
-    return {'message': f'Show exercise {id}'}
+@app.route('/exercises/<int:exercise_id>', methods=['GET'])
+def get_exercise_by_id(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+
+    if not exercise:
+        return {'error': 'Exercise not found'}, 404
+    
+    exercise_schema = ExerciseSchema()
+    exercise_data = exercise_schema.dump(exercise)
+
+    return exercise_data, 200
 
 
 @app.route('/exercises', methods=['POST'])
 def create_exercise():
-    return {'message': 'Create an exercise'}, 201
+    data = request.get_json()
+
+    exercise_schema = ExerciseSchema()
+    valid_data = exercise_schema.load(data)
+
+    exercise = Exercise(**valid_data)
+
+    db.session.add(exercise)
+    db.session.commit()
+
+    return exercise_schema.dump(exercise), 201
 
 
-@app.route('/exercises/<int:id>', methods=['DELETE'])
-def delete_exercise(id):
+@app.route('/exercises/<int:exercise_id>', methods=['DELETE'])
+def delete_exercise(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+
+    if not exercise:
+        return {'error': 'Exercise not found'}, 404
+    
+    db.session.delete(exercise)
+    db.session.commit()
+
     return '', 204
 
 
 @app.route('/workouts/<int:workout_id>/exercises/<int:exercise_id>/workout_exercises', methods=['POST'])
 def add_exercise_to_workout(workout_id, exercise_id):
-    return {
-        'message': f'Add exercise {exercise_id} to workout {workout_id}'
-    }, 201
+    workout = Workout.query.get(workout_id)
+    exercise = Exercise.query.get(exercise_id)
+
+    if not workout:
+        return {'error': 'Workout not found'}, 404
+
+    if not exercise:
+        return {'error': 'Exercise not found'}, 404
+    
+    data = request.get_json()
+    data["workout_id"] = workout_id
+    data["exercise_id"] = exercise_id
+
+    workout_exercise_schema = WorkoutExerciseSchema()
+    valid_data = workout_exercise_schema.load(data)
+
+    workout_exercise = WorkoutExercise(**valid_data)
+
+    db.session.add(workout_exercise)
+    db.session.commit()
+
+    return workout_exercise_schema.dump(data), 201
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)

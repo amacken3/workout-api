@@ -5,6 +5,11 @@ class ExerciseSchema(Schema):
     name = fields.Str(required=True)
     category = fields.Str(required=True)
     equipment_needed = fields.Bool(required=True)
+    workouts = fields.Nested(
+        "WorkoutSchema",
+        many=True,
+        exclude=("exercises",)
+    )
 
     @validates('name')
     def validate_name(self, name):
@@ -17,6 +22,11 @@ class WorkoutSchema(Schema):
     date = fields.Date(required=True)
     duration_minutes = fields.Int(required=True)
     notes = fields.Str(required=True)
+    exercises = fields.Nested(
+        "ExerciseSchema",
+        many=True,
+        exclude=("workouts",)
+    )
 
     @validates('duration_minutes')
     def validate_duration_minutes(self, duration_minutes):
