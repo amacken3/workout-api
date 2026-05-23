@@ -31,8 +31,9 @@ def get_workout_by_id(workout_id):
     workout = Workout.query.get(workout_id)
 
     if not workout:
-        return {'error': 'Workout not found'}, 404
-
+        response = make_response({'error': 'Workout not found'}, 404)
+        return response
+    
     workout_schema = WorkoutSchema()
     workout_data = workout_schema.dump(workout)
 
@@ -59,12 +60,14 @@ def delete_workout(workout_id):
     workout = Workout.query.get(workout_id)
 
     if not workout:
-        return {'error': 'Workout not found'}, 404
+        response = make_response({'error': 'Workout not found'}, 404)
+        return response
     
     db.session.delete(workout)
     db.session.commit()
 
-    return '', 204
+    response = make_response('', 204)
+    return response
 
 
 @app.route('/exercises', methods=['GET'])
@@ -82,7 +85,8 @@ def get_exercise_by_id(exercise_id):
     exercise = Exercise.query.get(exercise_id)
 
     if not exercise:
-        return {'error': 'Exercise not found'}, 404
+        response = make_response({'error': 'Exercise not found'}, 404)
+        return response
     
     exercise_schema = ExerciseSchema()
     exercise_data = exercise_schema.dump(exercise)
@@ -110,12 +114,14 @@ def delete_exercise(exercise_id):
     exercise = Exercise.query.get(exercise_id)
 
     if not exercise:
-        return {'error': 'Exercise not found'}, 404
+        response = make_response({'error': 'Exercise not found'}, 404)
+        return response
     
     db.session.delete(exercise)
     db.session.commit()
 
-    return '', 204
+    response = make_response('', 204)
+    return response
 
 
 @app.route('/workouts/<int:workout_id>/exercises/<int:exercise_id>/workout_exercises', methods=['POST'])
@@ -124,10 +130,12 @@ def add_exercise_to_workout(workout_id, exercise_id):
     exercise = Exercise.query.get(exercise_id)
 
     if not workout:
-        return {'error': 'Workout not found'}, 404
+        response = make_response({'error': 'Workout not found'}, 404)
+        return response
 
     if not exercise:
-        return {'error': 'Exercise not found'}, 404
+        response = make_response({'error': 'Exercise not found'}, 404)
+        return response
     
     data = request.get_json()
     data["workout_id"] = workout_id
@@ -141,7 +149,7 @@ def add_exercise_to_workout(workout_id, exercise_id):
     db.session.add(workout_exercise)
     db.session.commit()
 
-    return workout_exercise_schema.dump(data), 201
+    return workout_exercise_schema.dump(workout_exercise), 201
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
