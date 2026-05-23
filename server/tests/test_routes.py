@@ -53,8 +53,11 @@ def client():
 
         yield app.test_client()
 
+        WorkoutExercise.query.delete()
+        Workout.query.delete()
+        Exercise.query.delete()
+        db.session.commit()
         db.session.remove()
-        db.drop_all()
 
 
 def test_index_route_returns_success(client):
